@@ -1,0 +1,5 @@
+open tty.usbserial
+put files/main.py main.py
+put files/utils.py utils.py
+put files/urequests.py urequests.py
+

@@ -1,0 +1,4 @@
+open ws:192.168.1.150
+put files/main.py main.py
+put files/utils.py utils.py
+put files/urequests.py urequests.py
