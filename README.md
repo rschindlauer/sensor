@@ -1,12 +1,14 @@
 # Sensor
 
-## Install Ansible on Pi Zero
+## Install Ansible
 
-1. follow http://docs.ansible.com/ansible/intro_installation.html#latest-releases-via-apt-debian
-
-Wait, that's not actually necessary. Ansible is only needed on the client. Installing on the Mac.
+Part of `requirements.txt`.
 
 ## Deploy on PiZero
+
+```
+ansible-playbook site.yaml -i hosts
+```
 
 ## Flask App
 
@@ -27,6 +29,7 @@ echo '{"message": "Hello **world**!"}' | curl -d @- -H 'Content-Type: applicatio
 
 1. `pip install esptool`
 2. Download upython flash: `wget http://micropython.org/resources/firmware/esp8266-20170108-v1.8.7.bin`
+3. Install serial cable driver for OSX: http://www.prolific.com.tw/US/ShowProduct.aspx?p_id=229&pcid=41
 
 ### Flash upython
 
@@ -59,3 +62,7 @@ Using urequests for a nice wrapper around GET and POST.
 ### Transferring Files
 
 mpfshell: https://github.com/wendlers/mpfshell
+
+```
+mpfshell -n -s deploy.mpf
+```

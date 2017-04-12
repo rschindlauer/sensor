@@ -11,11 +11,12 @@
     </head>
     <body>
         <div class="container">
-            <div class="row">
-                <div class="one column"><h1>Temperature: {{ t }}</h1></div>
+            <div style="margin-top: 8rem" class="row">
+                <div class="four columns"><h1>{{ t }} °F</h1></div>
+                <div class="four columns"><h1>{{ h }} %</h1></div>
             </div>
             <div class="row">
-                <div class="one column"><h1>Humidity: {{ h }}</h1></div>
+                Updated: {{ updated }}
             </div>
     </body>
 </html>

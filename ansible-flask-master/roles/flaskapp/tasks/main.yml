@@ -7,6 +7,12 @@
 - name: Install flask
   apt: name=python-flask state=present
 
+- name: Install Adafruit_IO
+  pip: name=adafruit-io state=present
+
+- name: Install simplejson
+  pip: name=simplejson state=present
+
 - name: Configure flask virtualhost
   copy: src=sensor.conf dest=/etc/apache2/sites-available/sensor.conf
   notify: apache2 restart
