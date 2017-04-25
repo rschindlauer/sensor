@@ -66,3 +66,37 @@ mpfshell: https://github.com/wendlers/mpfshell
 ```
 mpfshell -n -s deploy.mpf
 ```
+
+## RFM69
+
+Lower power consumption that Wifi!
+
+### Sensor node
+
+- Uses a Moteino, programmed with a FTDI USB connection.
+- Install Arduino SDK
+- In the SDK, install the Moteino board (Add the Moteino core json definition URL to your Board Manager). Follow https://lowpowerlab.com/guide/moteino/programming-libraries/
+- connect to USB, select the right port in Tools menu
+- Try Node example, should run and produce serial output (set baud rate to 115200 in serial UI)
+- add other libraries:
+  - https://github.com/LowPowerLab/LowPower
+  - https://github.com/adafruit/Adafruit_Sensor
+  - https://github.com/adafruit/DHT-sensor-library
+  
+### Receiver node
+
+- Uses a RFM69 breakout board, connected to a Raspberry Pi Zero
+- Wiring according to https://github.com/etrombly/RFM69
+- Prerequisites:
+  ```
+  sudo apt-get install python-spidev
+  sudo apt-get install python-rpi.gpio python3-rpi.gpio
+  git clone https://github.com/Gadgetoid/py-spidev
+  cd py-spidev
+  sudo python setup.py install
+  sudo raspi-config # enable SPI (also S2C?)
+  ```
+- modify `RFM69/example`:
+  - node, receiver Ids
+  - comment out high power mode
+  - encryption key

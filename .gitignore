@@ -1,0 +1,3 @@
+.vscode/.ropeproject
+.ipynb_checkpoints
+**/secrets.py
