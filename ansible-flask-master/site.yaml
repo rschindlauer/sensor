@@ -1,6 +1,0 @@
-- name: Deploy flask environment
-  hosts: pizero
-  remote_user: roman
-  become: yes
-  roles:
-  - flaskapp
