@@ -1,0 +1,8 @@
+- name: Deploy {{ service_name }} script
+  copy: src=files/{{ service_name }}.py dest={{ daemon_folder }}
+- name: Make {{ service_name }} script executable
+  file: path={{ daemon_script }} mode=0751
+- name: Deploy {{ service_name }} daemon init script
+  template: src=templates/init.d-template.j2 dest=/etc/init.d/{{ service_name }} mode=0751
+- name: Ensure daemon {{ service_name }} is started
+  service: name={{ service_name }} state=restarted daemon_reload=yes

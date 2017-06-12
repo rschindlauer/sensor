@@ -1,0 +1,14 @@
+- hosts: pizero
+  become: yes
+
+  vars:
+    user: root
+    daemon_folder: /var/opt/sensor
+    # service_name: mqtt_influxdb
+    daemon_script: "{{ daemon_folder }}/{{ service_name }}.py"
+    pidfile: "{{ service_name }}.pid"
+    daemon_opts: ""
+
+  tasks:
+  - include: tasks/serviced.yaml service_name=mqtt_influxdb
+  - include: tasks/serviced.yaml service_name=mqtt_wunderground
