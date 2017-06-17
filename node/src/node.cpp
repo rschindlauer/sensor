@@ -83,6 +83,7 @@ void flashSetup() {
         Serial.println(']');
         blink(1, 50);
         #endif
+        flash.sleep();
     } else {
         #if DEV_MODE
         Serial.println("SPI Flash MEM not found (is chip soldered?)...");

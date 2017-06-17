@@ -50,6 +50,10 @@ This assumes a certain usb-serial port, depending on the cable being used (I use
 
 The node code itself is very straightforward. It uses Xose's RFM69GW project's node code, with a modified RFM69Manager, see below.
 
+### Motion
+
+The code under `motion/` is for PIR-based motion detector nodes, loosely based on LowPowerLab's MotionMotes.
+
 ## Gateway
 
 The gateway is in folder `gateway`, based on Xose Pérez' excellent project https://bitbucket.org/xoseperez/rfm69gw. I used Adafruit's [ESP8266 Huzzah board](https://www.adafruit.com/product/2471), together with their [RFM69 breakout board](https://www.adafruit.com/product/3070). The wiring is straightforward (my newer version of the ESP8266 didn't require the swapping of GPIO #4 and #5 anymore), make sure to also connect the RFM69's reset pin (I used pin 16). I made the following changes to the gateway code:
@@ -71,7 +75,7 @@ Once programmed, you can also update it OTA--make sure to adjust its IP address 
 
 ```
 platformio run --target upload -e ota
-``
+```
 
 Once deployed, you can configure the gateway. It will create its own Wifi AP, connect to it to make it join your actual WiFi network. Then configure where to send the MQTT messages (see below). You also want to add MQTT mappings, to translate the raw node data to proper MQTT paths. For example, I am transmitting values of key `T` from node `2` to the MQTT path `/home/garage/temperature`, while values of key `T` from node `3` go to `/home/attic/temperature`. This path is relevant for the MQTT -> InfluxDB script discussed below.
 
