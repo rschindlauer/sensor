@@ -12,13 +12,15 @@ MQTT_BROKER_PORT = 1883
 CONFIG_TOPIC = '/home/outside'
 CONFIG_WU_API_KEY = '16b941b91e0a8ffc'
 
+# with supervisor we can simply log to stdout, it will take care of the right file
+# destination
 formatter = logging.Formatter('[%(asctime)s] %(name)s %(levelname)s: %(message)s')
-fh = logging.FileHandler('/var/log/mqtt_wunderground.log')
-# fh = logging.StreamHandler()
-fh.setFormatter(formatter)
-logger = logging.getLogger()
-logger.addHandler(fh)
-logger.setLevel(logging.WARNING)
+# fh = logging.FileHandler('/var/log/mqtt_wunderground.log')
+loghandler = logging.StreamHandler()
+loghandler.setFormatter(formatter)
+log = logging.getLogger()
+log.addHandler(loghandler)
+log.setLevel(logging.DEBUG)
 
 
 # Component config

@@ -1,13 +1,6 @@
 - hosts: pizero
   become: yes
 
-  vars:
-    user: root
-    daemon_folder: /var/opt/sensor
-    # service_name: mqtt_influxdb
-    daemon_script: "{{ daemon_folder }}/{{ service_name }}.py"
-    pidfile: "{{ service_name }}.pid"
-
   tasks:
   - name: Install supervisor
     apt:
@@ -44,9 +37,7 @@
   # This gets called whenever a task needs to restart supervisor with an updated
   # config
   - name: reload supervisor
-    block:
-      - shell: supervisorctl reread
-      - shell: supervisorctl update
+    service: name=supervisor state=restarted
 
   - name: restart wunderground
     shell: supervisorctl restart wunderground_mqtt

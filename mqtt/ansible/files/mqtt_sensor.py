@@ -24,12 +24,15 @@ CONFIG['INFLUXDB_DB'] = 'logger'
 telegram_bot = telepot.Bot('414165500:AAHBkyY6hshDQynYe6nTKYIHvSb8iGFvYuc')
 telegram_chat_id = -233166988
 
+# with supervisor we can simply log to stdout, it will take care of the right file
+# destination
 formatter = logging.Formatter('[%(asctime)s] %(name)s %(levelname)s: %(message)s')
-fh = logging.FileHandler('/var/log/mqtt_influxdb.log')
-fh.setFormatter(formatter)
+# fh = logging.FileHandler('/var/log/mqtt_influxdb.log')
+loghandler = logging.StreamHandler()
+loghandler.setFormatter(formatter)
 log = logging.getLogger()
-log.addHandler(fh)
-log.setLevel(logging.INFO)
+log.addHandler(loghandler)
+log.setLevel(logging.DEBUG)
 
 def on_connect(client, userdata, rc):
     log.info("Connected with result code {}".format(rc))
@@ -94,18 +97,20 @@ def on_message_telegram(client, userdata, msg):
 
     # the date doesn't matter, we are just comparing the time:
     time_start = datetime.datetime(2017, 8, 1, 20, 0)
-    time_end = datetime.datetime(2017, 8, 1, 6, 30)
+    time_end = datetime.datetime(2017, 8, 1, 5, 30)
 
-    if datetime.datetime.now().time() > time_start.time():
-        return
-
-    if datetime.datetime.now().time() < time_end.time():
+    # this condition only works if start time is "after" end time, i.e., if the
+    # period is over night
+    if (datetime.datetime.now().time() < time_start.time()) and \
+       (datetime.datetime.now().time() > time_end.time()):
+        log.debug('Motion detected, but outside the alert window')
         return
 
     delay = datetime.datetime.now() - on_message_telegram.last_telegram_time
 
     # ignore new messages within 5min
     if delay.seconds < 300:
+        log.debug('Motion detected, but within debounce window')
         return
 
     on_message_telegram.last_telegram_time = datetime.datetime.now()
@@ -116,6 +121,7 @@ def on_message_telegram(client, userdata, msg):
     sensor_id = topic_path[-2]
 
     if measurement == 'motion':
+        log.debug('Motion detected, sending to telegram')
         telegram_bot.sendMessage(telegram_chat_id, 'Asha is on the move!')
 
 def main():
