@@ -7,8 +7,49 @@
     # service_name: mqtt_influxdb
     daemon_script: "{{ daemon_folder }}/{{ service_name }}.py"
     pidfile: "{{ service_name }}.pid"
-    daemon_opts: ""
 
   tasks:
-  - include: tasks/serviced.yaml service_name=mqtt_influxdb
-  - include: tasks/serviced.yaml service_name=mqtt_wunderground
+  - name: Install supervisor
+    apt:
+      name: supervisor
+      state: present
+    become: True
+
+  - name: Start supervisor
+    service:
+      name: supervisor
+      state: started
+      enabled: yes
+    become: True
+
+  - name: create installation folder
+    file: path=/var/opt/sensor state=directory
+
+  - name: install telepot
+    pip: name=telepot
+
+  - name: copy sensor script
+    copy: src=mqtt_sensor.py dest=/var/opt/sensor/ mode=ug+rx
+    notify: restart sensor
+
+  - name: copy wunderground script
+    copy: src=mqtt_wunderground.py dest=/var/opt/sensor/ mode=ug+rx
+    notify: restart wunderground
+
+  - name: copy supervisor config
+    copy: src=supervisor-sensor.conf dest=/etc/supervisor/conf.d/supervisor-sensor.conf
+    notify: reload supervisor
+
+  handlers:
+  # This gets called whenever a task needs to restart supervisor with an updated
+  # config
+  - name: reload supervisor
+    block:
+      - shell: supervisorctl reread
+      - shell: supervisorctl update
+
+  - name: restart wunderground
+    shell: supervisorctl restart wunderground_mqtt
+
+  - name: restart sensor
+    shell: supervisorctl restart sensor_mqtt

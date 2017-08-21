@@ -12,7 +12,7 @@
 // Configuration
 // -----------------------------------------------------------------------------
 
-#define NODEID              4
+#define NODEID              5
 #define GATEWAYID           1
 #define NETWORKID           100
 #define FREQUENCY           RF69_915MHZ

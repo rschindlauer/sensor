@@ -3,6 +3,10 @@
 import argparse
 import paho.mqtt.client as mqtt
 from datetime import datetime
+import telepot
+bot = telepot.Bot('414165500:AAHBkyY6hshDQynYe6nTKYIHvSb8iGFvYuc')
+# id = bot.getMe()['id']
+CHAT_ID = -233166988
 
 def on_connect(mqttc, userdata, rc):
     print('connected... rc=' + str(rc))
@@ -17,6 +21,8 @@ def on_message(mqttc, userdata, msg):
         str(msg.qos),
         str(msg.retain),
         str(msg.payload)))
+    if msg.topic.split('/')[-1] == 'motion' and msg.retain == 0:
+        bot.sendMessage(CHAT_ID, 'Asha is on the move!')
 
 def on_subscribe(mqttc, userdata, mid, granted_qos):
     print('subscribed (qos=' + str(granted_qos) + ')')
