@@ -1,18 +1,19 @@
 <!DOCTYPE html>
 <html>
+
     <head>
 
         <title>RFM69GW 0.0.0</title>
         <meta charset="utf-8" />
-        <link rel="shortcut icon" type="image/x-icon" href="favicon.ico" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <!-- shortcut::html/favicon.ico -->
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
         <!-- build:css style.css -->
-        <link rel="stylesheet" href="pure-min.css" />
+        <link rel="stylesheet" href="pure-1.0.0.min.css" />
         <link rel="stylesheet" href="side-menu.css" />
-        <link rel="stylesheet" href="grids-responsive-min.css" />
+        <link rel="stylesheet" href="grids-responsive-1.0.0.min.css" />
         <link rel="stylesheet" href="checkboxes.css" />
-        <link rel="stylesheet" href="jquery.dataTables.min.css" />
+        <link rel="stylesheet" href="datatables-1.10.16.css" />
         <link rel="stylesheet" href="custom.css" />
         <!-- endbuild -->
 
@@ -20,7 +21,56 @@
 
     <body>
 
-        <div id="layout">
+        <div id="credentials" class="webmode">
+            Wrong credentials
+        </div>
+
+        <div id="password" class="webmode">
+
+            <div class="content">
+
+                <form id="formPassword" class="pure-form" action="/" method="post">
+
+                    <input class="pure-u-1 pure-u-sm-3-4" type="hidden" name="webMode" value="1" />
+
+                    <div class="panel" style="display: block;">
+
+                        <div class="header">
+                            <h1>SECURITY</h1>
+                            <h2>Before using this device you have to change the default password for the user 'admin'. This password will be used for the <strong>AP mode hotspot</strong>, the <strong>web interface</strong> (where you are now) and the <strong>over-the-air updates</strong>.</h2>
+                        </div>
+
+                        <div class="page">
+
+                            <fieldset>
+
+                                <div class="pure-g">
+                                    <label class="pure-u-1 pure-u-md-1-4" for="adminPass1">Admin password</label>
+                                    <input name="adminPass1" class="pure-u-1 pure-u-md-3-4" type="password" tabindex="1" autocomplete="false" />
+                                    <div class="pure-u-0 pure-u-md-1-4">&nbsp;</div>
+                                    <div class="pure-u-1 pure-u-md-3-4 hint">
+                                        The administrator password is used to access this web interface (user 'admin'), but also to connect to the device when in AP mode or to flash a new firmware over-the-air (OTA).<br />
+                                        It should have at least <strong>eight characters</strong> (letters, numbers or the underscore) and at least <strong>one number</strong>, <strong>one lowercase</strong> and <strong>one uppercase</strong> letter.</div>
+                                </div>
+
+                                <div class="pure-g">
+                                    <label class="pure-u-1 pure-u-md-1-4" for="adminPass2">Repeat password</label>
+                                    <input name="adminPass2" class="pure-u-1 pure-u-md-3-4" type="password" tabindex="2" autocomplete="false" />
+                                </div>
+
+                                <button class="pure-button button-update-password">Update</button>
+
+                            </fieldset>
+                        </div>
+                    </div>
+
+                </form>
+
+            </div> <!-- content -->
+
+        </div>
+
+        <div id="layout" class="webmode">
 
             <a href="#menu" id="menuLink" class="menu-link">
                 <span></span>
@@ -49,6 +99,10 @@
                             <a href="#" class="pure-menu-link" data="panel-mqtt">MQTT</a>
                         </li>
 
+                        <li class="pure-menu-item module module-ntp">
+                            <a href="#" class="pure-menu-link" data="panel-ntp">NTP</a>
+                        </li>
+
                         <li class="pure-menu-item">
                             <a href="#" class="pure-menu-link" data="panel-mapping">MAPPING</a>
                         </li>
@@ -60,9 +114,17 @@
                     </ul>
 
                     <div class="main-buttons">
-                        <button class="pure-button button-update">Update</button>
+                        <button class="pure-button button-update">Save</button>
                         <button class="pure-button button-reconnect">Reconnect</button>
                         <button class="pure-button button-reset">Reset</button>
+                    </div>
+
+                    <div class="footer">
+                        &copy; 2016-2017<br />
+                        Xose Pérez<br/>
+                        <a href="http://tinkerman.cat" target="_blank">http://tinkerman.cat</a><br/>
+                        <a href="https://bitbucket.org/xoseperez/rfm69gw" target="_blank">RFM69GW @ Bitbucket</a><br/>
+                        GPLv3 license<br/>
                     </div>
 
                 </div>
@@ -83,33 +145,66 @@
                             <fieldset>
 
                                 <div class="pure-g">
-                                    <label class="pure-u-1 pure-u-sm-1-4" for="hostname">Hostname</label>
-                                    <input class="pure-u-1 pure-u-sm-3-4" type="text" name="hostname" readonly />
+                                    <label class="pure-u-1 pure-u-sm-1-4" for="packetCount">Packet count</label>
+                                    <input class="pure-u-1 pure-u-sm-3-4" type="text" name="packetCount" readonly />
                                 </div>
 
                                 <div class="pure-g">
-                                    <label class="pure-u-1 pure-u-sm-1-4" for="chipid">Chip ID</label>
-                                    <input class="pure-u-1 pure-u-sm-3-4" type="text" name="chipid" readonly />
+                                    <label class="pure-u-1 pure-u-sm-1-4" for="nodeCount">Node count</label>
+                                    <input class="pure-u-1 pure-u-sm-3-4" type="text" name="nodeCount" readonly />
                                 </div>
 
-                                <div class="pure-g">
-                                    <label class="pure-u-1 pure-u-sm-1-4" for="mac">MAC</label>
-                                    <input class="pure-u-1 pure-u-sm-3-4" type="text" name="mac" readonly />
-                                </div>
+                                <div class="pure-u-1 state">
 
-                                <div class="pure-g">
-                                    <label class="pure-u-1 pure-u-sm-1-4" for="network">Network</label>
-                                    <input class="pure-u-1 pure-u-sm-3-4" type="text" name="network" readonly />
-                                </div>
+                                    <div class="pure-u-1 pure-u-sm-1-4">Manufacturer</div>
+                                    <div class="pure-u-1 pure-u-sm-17-24"><span class="right" name="manufacturer"></span></div>
 
-                                <div class="pure-g">
-                                    <label class="pure-u-1 pure-u-sm-1-4" for="ip">IP</label>
-                                    <input class="pure-u-1 pure-u-sm-3-4" type="text" name="ip" readonly />
-                                </div>
+                                    <div class="pure-u-1 pure-u-sm-1-4">Device</div>
+                                    <div class="pure-u-1 pure-u-sm-17-24"><span class="right" name="device"></span></div>
 
-                                <div class="pure-g">
-                                    <label class="pure-u-1 pure-u-sm-1-4" for="mqtt">MQTT Status</label>
-                                    <input class="pure-u-1 pure-u-sm-3-4" type="text" name="mqttStatus" readonly />
+                                    <div class="pure-u-1 pure-u-sm-1-4">Chip ID</div>
+                                    <div class="pure-u-1 pure-u-sm-17-24"><span class="right" name="chipid"></span></div>
+
+                                    <div class="pure-u-1 pure-u-sm-1-4">MAC</div>
+                                    <div class="pure-u-1 pure-u-sm-17-24"><span class="right" name="mac"></span></div>
+
+                                    <div class="pure-u-1 pure-u-sm-1-4">Network</div>
+                                    <div class="pure-u-1 pure-u-sm-17-24"><span class="right" name="network"></span></div>
+
+                                    <div class="pure-u-1 pure-u-sm-1-4">IP</div>
+                                    <div class="pure-u-1 pure-u-sm-17-24"><span class="right" name="deviceip"></span></div>
+
+                                    <div class="pure-u-1 pure-u-sm-1-4">Firmware name</div>
+                                    <div class="pure-u-1 pure-u-sm-17-24"><span class="right" name="app_name"></span></div>
+
+                                    <div class="pure-u-1 pure-u-sm-1-4">Firmware version</div>
+                                    <div class="pure-u-1 pure-u-sm-17-24"><span class="right" name="app_version"></span></div>
+
+                                    <div class="pure-u-1 pure-u-sm-1-4">Firmware build</div>
+                                    <div class="pure-u-1 pure-u-sm-17-24"><span class="right" name="app_build"></span></div>
+
+                                    <div class="pure-u-1 pure-u-sm-1-4">Current time</div>
+                                    <div class="pure-u-1 pure-u-sm-17-24"><span class="right" name="time"></span></div>
+
+                                    <div class="pure-u-1 pure-u-sm-1-4">Uptime</div>
+                                    <div class="pure-u-1 pure-u-sm-17-24"><span class="right" name="uptime"></span></div>
+
+                                    <div class="pure-u-1 pure-u-sm-1-4">Free heap</div>
+                                    <div class="pure-u-1 pure-u-sm-17-24"><span class="right" name="heap" post=" bytes"></span></div>
+
+                                    <div class="pure-u-1 pure-u-sm-1-4">Firmware size</div>
+                                    <div class="pure-u-1 pure-u-sm-17-24"><span class="right" name="sketch_size" post=" bytes"></span></div>
+
+                                    <div class="pure-u-1 pure-u-sm-1-4">Free space</div>
+                                    <div class="pure-u-1 pure-u-sm-17-24"><span class="right" name="free_size" post=" bytes"></span></div>
+
+                                    <div class="pure-u-1 pure-u-sm-1-4">MQTT Status</div>
+                                    <div class="pure-u-1 pure-u-sm-17-24"><span class="right" name="mqttStatus"></span></div>
+
+                                    <div class="pure-u-1 pure-u-sm-1-4">NTP Status</div>
+                                    <div class="pure-u-1 pure-u-sm-17-24"><span class="right" name="ntpStatus"></span></div>
+
+
                                 </div>
 
                             </fieldset>
@@ -118,7 +213,9 @@
                     </div>
                 </div>
 
-                <form id="formSave" class="pure-form" action="/" method="post">
+                <form id="formSave" class="pure-form" action="/" method="post" enctype="multipart/form-data">
+
+                    <input class="pure-u-1 pure-u-sm-3-4" type="hidden" name="webMode" value="0" />
 
                     <div class="panel" id="panel-general">
 
@@ -133,30 +230,70 @@
 
                                 <div class="pure-g">
                                     <label class="pure-u-1 pure-u-md-1-4" for="hostname">Hostname</label>
-                                    <input name="hostname" class="pure-u-1 pure-u-md-3-4" type="text" tabindex="1" />
+                                    <input name="hostname" class="pure-u-1 pure-u-md-3-4" type="text" action="reset" tabindex="1" />
                                     <div class="pure-u-0 pure-u-md-1-4">&nbsp;</div>
                                     <div class="pure-u-1 pure-u-md-3-4 hint">This name will identify this device in your network (http://&lt;hostname&gt;.local). For this setting to take effect you should restart the wifi interface clicking the "Reconnect" button.</div>
                                 </div>
 
                                 <div class="pure-g">
-                                    <label class="pure-u-1 pure-u-md-1-4" for="adminPass">Admin password</label>
-                                    <input name="adminPass" class="pure-u-1 pure-u-md-3-4" type="text" tabindex="3" />
+                                    <label class="pure-u-1 pure-u-md-1-4" for="adminPass1">Admin password</label>
+                                    <input name="adminPass1" class="pure-u-1 pure-u-md-3-4" type="password" action="reset" tabindex="11" autocomplete="false" />
                                     <div class="pure-u-0 pure-u-md-1-4">&nbsp;</div>
-                                    <div class="pure-u-1 pure-u-md-3-4 hint">The administrator password is used to access this web interface (user 'admin'), but also to connect to the device when in AP mode or to flash a new firmware over-the-air (OTA).</div>
+                                    <div class="pure-u-1 pure-u-md-3-4 hint">
+                                        The administrator password is used to access this web interface (user 'admin'), but also to connect to the device when in AP mode or to flash a new firmware over-the-air (OTA).<br />
+                                        It should have at least <strong>eight characters</strong> (letters, numbers or the underscore) and at least <strong>one number</strong>, <strong>one lowercase</strong> and <strong>one uppercase</strong> letter.</div>
                                 </div>
 
                                 <div class="pure-g">
-                                    <label class="pure-u-1 pure-u-md-1-4" for="hbTopic">Heartbeat Topic</label>
-                                    <input name="hbTopic" class="pure-u-1 pure-u-md-3-4" type="text" tabindex="3" />
-                                    <div class="pure-u-0 pure-u-md-1-4">&nbsp;</div>
-                                    <div class="pure-u-1 pure-u-md-3-4 hint">This is the topic where heartbeat messages will be sent.</div>
+                                    <label class="pure-u-1 pure-u-md-1-4" for="adminPass2">Repeat password</label>
+                                    <input name="adminPass2" class="pure-u-1 pure-u-md-3-4" type="password" action="reset" tabindex="12" autocomplete="false" />
                                 </div>
 
                                 <div class="pure-g">
-                                    <label class="pure-u-1 pure-u-md-1-4" for="ipTopic">IP Topic</label>
-                                    <input name="ipTopic" class="pure-u-1 pure-u-md-3-4" type="text" tabindex="3" />
+                                    <label class="pure-u-1 pure-u-md-1-4" for="webPort">HTTP port</label>
+                                    <input name="webPort" class="pure-u-1 pure-u-md-3-4" type="text" action="reset" tabindex="13" />
                                     <div class="pure-u-0 pure-u-md-1-4">&nbsp;</div>
-                                    <div class="pure-u-1 pure-u-md-3-4 hint">Upon restart the device will report its IP to this topic.</div>
+                                    <div class="pure-u-1 pure-u-md-3-4 hint">
+                                        This is the port for the web interface and API requests.<br />
+                                        If different than 80 (standard HTTP port) you will have to add it explicitly to your requests: http://myip:myport/
+                                    </div>
+                                </div>
+
+                                <div class="pure-g module module-telnet">
+                                    <div class="pure-u-1 pure-u-sm-1-4"><label for="telnetSTA">Enable TELNET</label></div>
+                                    <div class="pure-u-1 pure-u-sm-1-4"><input type="checkbox" name="telnetSTA" /></div>
+                                    <div class="pure-u-0 pure-u-md-1-2">&nbsp;</div>
+                                    <div class="pure-u-0 pure-u-md-1-4">&nbsp;</div>
+                                    <div class="pure-u-1 pure-u-md-3-4 hint">Turn ON to be able to telnet to your device while connected to your home router.<br />TELNET is always enabled in AP mode.</div>
+                                </div>
+
+
+                                <div class="pure-g module module-nofuss">
+                                    <div class="pure-u-1 pure-u-sm-1-4"><label for="nofussEnabled">Automatic remote updates (NoFUSS)</label></div>
+                                    <div class="pure-u-1 pure-u-sm-1-4"><input type="checkbox" name="nofussEnabled" /></div>
+                                </div>
+
+                                <div class="pure-g module module-nofuss">
+                                    <label class="pure-u-1 pure-u-md-1-4" for="nofussServer">NoFUSS server</label>
+                                    <input name="nofussServer" class="pure-u-1 pure-u-md-3-4" type="text" tabindex="15" />
+                                    <div class="pure-u-0 pure-u-md-1-4">&nbsp;</div>
+                                    <div class="pure-u-1 pure-u-md-3-4 hint">This name address of the NoFUSS server for automatic remote updates (see https://bitbucket.org/xoseperez/nofuss).</div>
+                                </div>
+
+                                <div class="pure-g">
+                                    <label class="pure-u-1 pure-u-sm-1-4">Settings</label>
+                                    <div class="pure-u-1 pure-u-sm-1-8"><button class="pure-button button-settings-backup pure-u-23-24">Backup</button></div>
+                                    <div class="pure-u-1 pure-u-sm-1-8"><button class="pure-button button-settings-restore pure-u-23-24">Restore</button></div>
+                                </div>
+
+                                <div class="pure-g">
+                                    <label class="pure-u-1 pure-u-md-1-4">Upgrade</label>
+                                    <input class="pure-u-1-2 pure-u-md-1-2" name="filename" type="text" readonly />
+                                    <div class=" pure-u-1-8 pure-u-md-1-8"><button class="pure-button button-upgrade-browse pure-u-23-24">Browse</button></div>
+                                    <div class=" pure-u-1-8 pure-u-md-1-8"><button class="pure-button button-upgrade pure-u-23-24">Upgrade</button></div>
+                                    <div class="pure-u-0 pure-u-md-1-4">&nbsp;</div>
+                                    <div class="pure-u-1 pure-u-md-3-4"><progress id="upgrade-progress"></progress></div>
+                                    <input name="upgrade" type="file" tabindex="16" />
                                 </div>
 
                             </fieldset>
@@ -168,51 +305,17 @@
 
                         <div class="header">
                             <h1>WIFI</h1>
-                            <h2>You can configure up to 3 different WiFi networks. The device will try to connect in order of signal strength.</h2>
+                            <h2>You can configure up to 5 different WiFi networks. The device will try to connect in order of signal strength.</h2>
                         </div>
 
                         <div class="page">
 
                             <fieldset>
 
-                                <legend>First network</legend>
-
-                                <div class="pure-g">
-                                    <div class="pure-u-1 pure-u-md-1-2">
-                                        <label for="ssid">SSID</label>
-                                        <input type="text" class="pure-u-23-24" tabindex="10" name="ssid" />
-                                    </div>
-                                    <div class="pure-u-1 pure-u-md-1-2">
-                                        <label for="pass">Password</label>
-                                        <input type="text" class="pure-u-23-24" tabindex="11" name="pass" />
-                                    </div>
+                                <div id="networks">
                                 </div>
 
-                                <legend>Second network</legend>
-
-                                <div class="pure-g">
-                                    <div class="pure-u-1 pure-u-md-1-2">
-                                        <label for="ssid">SSID</label>
-                                        <input type="text" class="pure-u-23-24" tabindex="12" name="ssid" />
-                                    </div>
-                                    <div class="pure-u-1 pure-u-md-1-2">
-                                        <label for="pass">Password</label>
-                                        <input type="text" class="pure-u-23-24" tabindex="13" name="pass" />
-                                    </div>
-                                </div>
-
-                                <legend>Third network</legend>
-
-                                <div class="pure-g">
-                                    <div class="pure-u-1 pure-u-md-1-2">
-                                        <label for="ssid">SSID</label>
-                                            <input type="text" class="pure-u-23-24" tabindex="14" name="ssid" />
-                                    </div>
-                                    <div class="pure-u-1 pure-u-md-1-2">
-                                        <label for="pass">Password</label>
-                                        <input type="text" class="pure-u-23-24" tabindex="15" name="pass" />
-                                    </div>
-                                </div>
+                                <button type="button" class="pure-button button-add-network">Add network</button>
 
                             </fieldset>
                         </div>
@@ -222,7 +325,7 @@
 
                         <div class="header">
                             <h1>MQTT</h1>
-                            <h2>Configure an <strong>MQTT broker</strong> in your network (or an external service) where you want the messages to be sent.                            </h2>
+                            <h2>Configure an <strong>MQTT broker</strong> in your network and you will be able to change the switch status via an MQTT message. Leave the server field empty to disable MQTT.</h2>
                         </div>
 
                         <div class="page">
@@ -230,23 +333,54 @@
                             <fieldset>
 
                                 <div class="pure-g">
-                                    <label class="pure-u-1 pure-u-md-1-4" for="mqttServer">MQTT Server</label>
-                                    <input class="pure-u-1 pure-u-md-3-4" name="mqttServer" type="text" size="20" tabindex="10" placeholder="MQTT Server" />
+                                    <div class="pure-u-1 pure-u-sm-1-4"><label for="mqttEnabled">Enable MQTT</label></div>
+                                    <div class="pure-u-1 pure-u-sm-1-4"><input type="checkbox" name="mqttEnabled" tabindex="30" /></div>
+                                </div>
+
+                                <div class="pure-g">
+                                    <label class="pure-u-1 pure-u-md-1-4" for="mqttServer">MQTT Broker</label>
+                                    <input class="pure-u-1 pure-u-md-3-4" name="mqttServer" type="text" size="20" tabindex="21" placeholder="IP or address of your broker" />
                                 </div>
 
                                 <div class="pure-g">
                                     <label class="pure-u-1 pure-u-md-1-4" for="mqttPort">MQTT Port</label>
-                                    <input class="pure-u-1 pure-u-md-3-4" name="mqttPort" type="text" size="6" tabindex="11" placeholder="1883" />
+                                    <input class="pure-u-1 pure-u-md-3-4" name="mqttPort" type="text" size="6" tabindex="22" value="1883" />
                                 </div>
 
                                 <div class="pure-g">
                                     <label class="pure-u-1 pure-u-md-1-4" for="mqttUser">MQTT User</label>
-                                    <input class="pure-u-1 pure-u-md-3-4" name="mqttUser" type="text" size="20" tabindex="12" placeholder="Leave blank if no user/pass" />
+                                    <input class="pure-u-1 pure-u-md-3-4" name="mqttUser" type="text" size="20" tabindex="23" placeholder="Leave blank if no user/pass" autocomplete="false" />
                                 </div>
 
                                 <div class="pure-g">
                                     <label class="pure-u-1 pure-u-md-1-4" for="mqttPassword">MQTT Password</label>
-                                    <input class="pure-u-1 pure-u-md-3-4" name="mqttPassword" type="text" size="20" tabindex="13" placeholder="Leave blank if no user/pass" />
+                                    <input class="pure-u-1 pure-u-md-3-4" name="mqttPassword" type="password" size="20" tabindex="24" placeholder="Leave blank if no user/pass" autocomplete="false" />
+                                </div>
+
+                                <div class="pure-g module module-mqttssl">
+                                    <div class="pure-u-1 pure-u-sm-1-4"><label for="mqttUseSSL">Use secure connection (SSL)</label></div>
+                                    <div class="pure-u-1 pure-u-sm-1-4"><input type="checkbox" name="mqttUseSSL" tabindex="25" /></div>
+                                </div>
+
+                                <div class="pure-g module module-mqttssl">
+                                    <label class="pure-u-1 pure-u-md-1-4" for="mqttFP">SSL Fingerprint</label>
+                                    <input class="pure-u-1 pure-u-md-3-4" name="mqttFP" type="text" size="59" tabindex="26" />
+                                    <div class="pure-u-0 pure-u-md-1-4">&nbsp;</div>
+                                    <div class="pure-u-1 pure-u-md-3-4 hint">
+                                        This is the fingerprint for the SSL certificate of the server.<br />
+                                        You can get it using <a href="https://www.grc.com/fingerprints.htm" target="_blank">https://www.grc.com/fingerprints.htm</a><br />
+                                        or using openssl from a linux box by typing:<br />
+                                        <pre>$ openssl s_client -connect &lt;host&gt;:&lt;port&gt; &lt; /dev/null 2&gt;/dev/null | openssl x509 -fingerprint -noout -in /dev/stdin</pre>
+                                    </div>
+                                </div>
+
+                                <div class="pure-g">
+                                    <label class="pure-u-1 pure-u-md-1-4" for="mqttTopic">MQTT Root Topic</label>
+                                    <input class="pure-u-1 pure-u-md-3-4" name="mqttTopic" type="text" size="20" tabindex="27" />
+                                    <div class="pure-u-0 pure-u-md-1-4">&nbsp;</div>
+                                    <div class="pure-u-1 pure-u-md-3-4 hint">
+                                        This is the root topic for this device. A trailing slash will be added if not preset. The {identifier} placeholder will be replaced by the device hostname.<br />
+                                    </div>
                                 </div>
 
                             </fieldset>
@@ -254,6 +388,47 @@
 
                     </div>
 
+                    <div class="panel" id="panel-ntp">
+
+                        <div class="header">
+                            <h1>NTP</h1>
+                            <h2>Configure your NTP (Network Time Protocol) servers and local configuration to keep your device time up to the second for your location.</h2>
+                        </div>
+
+                        <div class="page">
+
+                            <fieldset>
+
+                                <div class="pure-g">
+                                    <label class="pure-u-1 pure-u-md-1-4" for="ntpServer1">NTP Server 1</label>
+                                    <input class="pure-u-1 pure-u-md-3-4" name="ntpServer1" type="text" size="20" tabindex="41" />
+                                </div>
+
+                                <div class="pure-g">
+                                    <label class="pure-u-1 pure-u-md-1-4" for="ntpServer2">NTP Server 2</label>
+                                    <input class="pure-u-1 pure-u-md-3-4" name="ntpServer2" type="text" size="20" tabindex="42" />
+                                </div>
+
+                                <div class="pure-g">
+                                    <label class="pure-u-1 pure-u-md-1-4" for="ntpServer3">NTP Server 3</label>
+                                    <input class="pure-u-1 pure-u-md-3-4" name="ntpServer3" type="text" size="20" tabindex="43" />
+                                </div>
+
+                                <div class="pure-g">
+                                    <label class="pure-u-1 pure-u-sm-1-4" for="ntpOffset">Time offset</label>
+                                    <div class="pure-u-1 pure-u-sm-1-8"><input class="pure-u-sm-23-24" name="ntpOffset" type="number" min="-11" max="14" tabindex="44" data="0" /></div>
+                                    <div class="pure-u-1 pure-u-sm-5-8 hint center">Set to 0 for UTC time</div>
+                                </div>
+
+                                <div class="pure-g">
+                                    <div class="pure-u-1 pure-u-sm-1-4"><label for="ntpDST">Enable Daylight Saving Time</label></div>
+                                    <div class="pure-u-1 pure-u-sm-1-4"><input type="checkbox" name="ntpDST" /></div>
+                                </div>
+
+                            </fieldset>
+                        </div>
+
+                    </div>
                     <div class="panel" id="panel-mapping">
 
                         <div class="header">
@@ -278,7 +453,7 @@
 
                                 <div id="mapping"></div>
 
-                                <button type="button" class="pure-button button-add">Add</button>
+                                <button type="button" class="pure-button button-add-mapping">Add</button>
 
                             </fieldset>
                         </div>
@@ -299,14 +474,15 @@
 
                         <div class="page">
 
-                            <table id="messages" class="display" cellspacing="0" width="100%">
+                            <table id="packets" class="display" cellspacing="0" width="100%">
                                 <thead>
                                     <tr>
                                         <th>Timestamp</th>
                                         <th>SenderID</th>
                                         <th>PacketID</th>
                                         <th>TargetID</th>
-                                        <th>Payload</th>
+                                        <th>Name</th>
+                                        <th>Value</th>
                                         <th>RSSI</th>
                                         <th>Duplicates</th>
                                         <th>Missing</th>
@@ -325,24 +501,75 @@
 
                 </form>
 
-                <div id="template">
-                    <div class="pure-g">
-                        <div class="pure-u-md-1-6 pure-u-1-2"><input name="nodeid" type="text" class="pure-u-11-12" value="" size="8" tabindex="0" placeholder="Node ID"></div>
-                        <div class="pure-u-md-1-6 pure-u-1-2"><input name="key" type="text" class="pure-u-11-12" value="" size="8" tabindex="0" placeholder="Key"></div>
-                        <div class="pure-u-md-1-2 pure-u-3-4"><input name="topic" type="text" class="pure-md-11-12 pure-u-23-24" value="" size="8" tabindex="0" placeholder="MQTT Topic"></div>
-                        <div class="pure-u-md-1-6 pure-u-1-4"><button type="button" class="pure-button button-del pure-u-5-6 pure-u-md-5-6">Del</button></div>
-                    </div>
-                </div>
-
             </div> <!-- content -->
 
         </div> <!-- layout -->
 
+        <!-- Templates -->
+
+        <div id="networkTemplate" class="template">
+
+            <div class="pure-g">
+
+                <label class="pure-u-md-1-6 pure-u-1-4" for="ssid">Network SSID</label>
+                <div class="pure-u-md-3-4 pure-u-5-8"><input name="ssid" type="text" action="reconnect" class="pure-u-23-24" value="" size="8" tabindex="0" placeholder="Network SSID" required autocomplete="false" /></div>
+                <div class="pure-u-md-1-12 pure-u-1-8"><button type="button" class="pure-button button-more-network pure-u-1">...</button></div>
+
+                <div class="more">
+
+                    <div class="break"></div>
+
+                    <label class="pure-u-md-1-6 pure-u-1-4" for="pass">Password</label>
+                    <input class="pure-u-md-5-6 pure-u-3-4" name="pass" type="password" action="reconnect" value="" tabindex="0" autocomplete="false" />
+
+                    <div class="break"></div>
+
+                    <label class="pure-u-md-1-6 pure-u-1-4" for="ip">Static IP</label>
+                    <input class="pure-u-md-5-6 pure-u-3-4" name="ip" type="text" action="reconnect" value="" size="15" tabindex="0" autocomplete="false" />
+                    <div class="pure-u-md-1-6 pure-u-1-4"></div>
+                    <div class="pure-u-md-5-6 pure-u-3-4 hint">Leave empty for DNS negotiation</div>
+
+                    <label class="pure-u-md-1-6 pure-u-1-4" for="gw">Gateway IP</label>
+                    <input class="pure-u-md-5-6 pure-u-3-4" name="gw" type="text" action="reconnect" value="" size="15" tabindex="0" autocomplete="false" />
+                    <div class="pure-u-md-1-6 pure-u-1-4"></div>
+                    <div class="pure-u-md-5-6 pure-u-3-4 hint">Set when using a static IP</div>
+
+                    <label class="pure-u-md-1-6 pure-u-1-4" for="mask">Network Mask</label>
+                    <input class="pure-u-md-5-6 pure-u-3-4" name="mask" type="text" action="reconnect" value="255.255.255.0" size="15" tabindex="0" autocomplete="false" />
+                    <div class="pure-u-md-1-6 pure-u-1-4"></div>
+                    <div class="pure-u-md-5-6 pure-u-3-4 hint">Usually 255.255.255.0 for /24 networks</div>
+
+                    <label class="pure-u-md-1-6 pure-u-1-4" for="dns">DNS IP</label>
+                    <input class="pure-u-md-5-6 pure-u-3-4" name="dns" type="text" action="reconnect" value="8.8.8.8" size="15" tabindex="0" autocomplete="false" />
+                    <div class="pure-u-md-1-6 pure-u-1-4"></div>
+                    <div class="pure-u-md-5-6 pure-u-3-4 hint">Set the Domain Name Server IP to use when using a static IP</div>
+
+                    <div class="pure-u-md-1-6 pure-u-1-4"></div>
+                    <div class="pure-u-md-1-6 pure-u-1-4"><button type="button" class="pure-button button-del-network pure-u-5-6 pure-u-md-5-6">Del</button></div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <div id="nodeTemplate" class="template">
+            <div class="pure-g">
+                <div class="pure-u-md-1-6 pure-u-1-2"><input name="nodeid" type="text" class="pure-u-11-12" value="" size="8" tabindex="0" placeholder="Node ID"></div>
+                <div class="pure-u-md-1-6 pure-u-1-2"><input name="key" type="text" class="pure-u-11-12" value="" size="8" tabindex="0" placeholder="Key"></div>
+                <div class="pure-u-md-1-2 pure-u-3-4"><input name="topic" type="text" class="pure-md-11-12 pure-u-23-24" value="" size="8" tabindex="0" placeholder="MQTT Topic"></div>
+                <div class="pure-u-md-1-6 pure-u-1-4"><button type="button" class="pure-button button-del-mapping pure-u-5-6 pure-u-md-5-6">Del</button></div>
+            </div>
+        </div>
+
+        <iframe id="downloader" style="display:none;"></iframe>
+        <input id="uploader" type="file" style="display:none;" />
+
     </body>
 
     <!-- build:js script.js -->
-    <script src="jquery-1.12.3.min.js"></script>
-    <script src="jquery.dataTables.min.js"></script>
+    <script src="jquery-3.2.1.min.js"></script>
+    <script src="datatables-1.10.16.min.js"></script>
     <script src="checkboxes.js"></script>
     <script src="custom.js"></script>
     <!-- endbuild -->

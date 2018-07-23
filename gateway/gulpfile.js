@@ -23,6 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // File system builder
 // -----------------------------------------------------------------------------
 
+const fs = require('fs');
 const gulp = require('gulp');
 const htmlmin = require('gulp-htmlmin');
 const cleancss = require('gulp-clean-css');

@@ -79,6 +79,12 @@ platformio run --target upload -e ota
 
 Once deployed, you can configure the gateway. It will create its own Wifi AP, connect to it to make it join your actual WiFi network. Then configure where to send the MQTT messages (see below). You also want to add MQTT mappings, to translate the raw node data to proper MQTT paths. For example, I am transmitting values of key `T` from node `2` to the MQTT path `/home/garage/temperature`, while values of key `T` from node `3` go to `/home/attic/temperature`. This path is relevant for the MQTT -> InfluxDB script discussed below.
 
+To debug, listen to the console when connected:
+
+```
+platformio device monitor --baud 115200 --port /dev/cu.usbserial
+```
+
 ## MQTT broker
 
 The MQTT broker runs anywhere on your network, reachable by the gateway. I am using a Raspberry Pi Zero.

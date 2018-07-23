@@ -3,3 +3,4 @@
 **/secrets.py
 **/secrets.h
 **/site.retry
+**/*.pyc
