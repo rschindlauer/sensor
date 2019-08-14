@@ -85,6 +85,24 @@ To debug, listen to the console when connected:
 platformio device monitor --baud 115200 --port /dev/cu.usbserial
 ```
 
+### EEPROM
+
+If you change settings (like the admin password), they will be stored in the device's flash memory. You can inspect it through a telnet connection:
+
+```
+telnet 192.168.1.12
+```
+
+Then use the embedis commands:
+
+```
+keys
+```
+
+```
+get adminPass
+``` 
+
 ## MQTT broker
 
 The MQTT broker runs anywhere on your network, reachable by the gateway. I am using a Raspberry Pi Zero.

@@ -17,7 +17,7 @@
 #define NETWORKID           100
 #define FREQUENCY           RF69_915MHZ
 #define IS_RFM69HW          0
-#define PERIOD              300     // wakeup interval in seconds
+#define PERIOD              10     // wakeup interval in seconds
 #define DEV_MODE            0       // turns on blinking, serial, and serial prints
 
 #define SERIAL_BAUD         115200
@@ -59,6 +59,9 @@ void radioSend() {
     sprintf(payload, "T=%i;H=%i;B=%i", temperature, humidity, batteryReading);
     radio.send((char *) payload, (uint8_t) 2);
     radio.sleep();
+
+    blink(1, 500);
+
     #if DEV_MODE
     blink(1, 500);
     #endif

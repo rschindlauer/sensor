@@ -23,211 +23,166 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 */
 
-#include <Arduino.h>
 #include "config/all.h"
-
-// -----------------------------------------------------------------------------
-// Prototypes
-// -----------------------------------------------------------------------------
-
-#include <NtpClientLib.h>
-#include <ESPAsyncWebServer.h>
-#include <AsyncMqttClient.h>
-#include "RFM69Manager.h"
-#include "FS.h"
-
-template<typename T> String getSetting(const String& key, T defaultValue);
-template<typename T> bool setSetting(const String& key, T value);
-
-#define PAYLOAD_SEP ';'
-#define MAX_PAYLOAD_PAIRS 10
-
-struct _node_t {
-  unsigned long count = 0;
-  unsigned long missing = 0;
-  unsigned long duplicates = 0;
-  unsigned char lastPacketID = 0;
-};
-
-_node_t nodeInfo[255];
-
-// -----------------------------------------------------------------------------
-// METHODS
-// -----------------------------------------------------------------------------
-
-String getIdentifier() {
-    char identifier[20];
-    sprintf(identifier, "%s_%06X", DEVICE, ESP.getChipId());
-    return String(identifier);
-}
-
-void ledOn() {
-    digitalWrite(LED_PIN, LOW);
-}
-
-void ledOff() {
-    digitalWrite(LED_PIN, HIGH);
-}
-
-void blink(unsigned int delayms, unsigned char times = 1) {
-    for (unsigned char i=0; i<times; i++) {
-        if (i>0) delay(delayms);
-        ledOn();
-        delay(delayms);
-        ledOff();
-    }
-}
-
-void clearCounts() {
-    for(unsigned int i=0; i<255; i++) {
-        nodeInfo[i].duplicates = 0;
-        nodeInfo[i].missing = 0;
-    }
-}
-
-void processMessage(packet_t * data) {
-
-    // blink(5, 1);
-
-    DEBUG_MSG(
-        "[MESSAGE] messageID:%d senderID:%d targetID:%d packetID:%d payload:%s rssi:%d",
-        data->messageID,
-        data->senderID,
-        data->targetID,
-        data->packetID,
-        data->payload,
-        data->rssi
-    );
-
-    // Detect duplicates and missing packets
-    // packetID==0 means device is not sending packetID info
-    if (data->packetID > 0) {
-        if (nodeInfo[data->senderID].count > 0) {
-
-            unsigned char gap = data->packetID - nodeInfo[data->senderID].lastPacketID;
-
-            if (gap == 0) {
-                DEBUG_MSG(" DUPLICATED");
-                nodeInfo[data->senderID].duplicates = nodeInfo[data->senderID].duplicates + 1;
-                return;
-            }
-
-            if ((gap > 1) && (data->packetID > 1)) {
-                DEBUG_MSG(" MISSING PACKETS!!");
-                nodeInfo[data->senderID].missing = nodeInfo[data->senderID].missing + gap - 1;
-            }
-        }
-
-    }
-
-    nodeInfo[data->senderID].lastPacketID = data->packetID;
-    nodeInfo[data->senderID].count = nodeInfo[data->senderID].count + 1;
-
-    DEBUG_MSG("\n");
-
-    // Send info to websocket clients
-    char buffer[60];
-    sprintf_P(
-        buffer,
-        PSTR("{\"packet\": {\"senderID\": %u, \"targetID\": %u, \"packetID\": %u, \"payload\": \"%s\", \"rssi\": %d, \"duplicates\": %d, \"missing\": %d}}"),
-        data->senderID, data->targetID, data->packetID, data->payload, data->rssi,
-        nodeInfo[data->senderID].duplicates , nodeInfo[data->senderID].missing);
-    wsSend(buffer);
-
-
-    // unpack payload
-    char sep[2] = {';', 0};
-    char *kvpair[MAX_PAYLOAD_PAIRS] = {NULL};
-
-    char *tok = strtok(data->payload, sep);
-    size_t kvcount = 0;
-    while (tok != NULL && kvcount < MAX_PAYLOAD_PAIRS)
-    {
-        kvpair[kvcount++] = tok;
-        tok = strtok(NULL, sep);
-    }
-    // Also send RSSI
-    char rssi_kv[10];
-    sprintf(rssi_kv, "rssi=%i", data->rssi);
-    kvpair[kvcount++] = rssi_kv;
-
-    // Send all key-value pairs to MQTT
-    for (int i = 0; i < kvcount; i++)
-    {
-        char *key = strtok(kvpair[i], "=");
-        char *val = strtok(NULL, "=");
-        // printf("key: %s, val: %s\n", key, val);
-
-        // Try to find a matching mapping
-        bool found = false;
-        unsigned int count = getSetting("mappingCount", "0").toInt();
-        for (unsigned int i=0; i<count; i++) {
-            if ((getSetting("nodeid" + String(i)) == String(data->senderID)) &&
-                (getSetting("key" + String(i)) == key)) {
-                mqttSend((char *) getSetting("topic" + String(i)).c_str(), (char *) String(val).c_str());
-                found = true;
-                break;
-            }
-        }
-
-        if (!found) {
-            String topic = getSetting("defaultTopic", MQTT_DEFAULT_TOPIC);
-            if (topic.length() > 0) {
-                topic.replace("{nodeid}", String(data->senderID));
-                topic.replace("{key}", String(key));
-                mqttSend((char *) topic.c_str(), (char *) String(val).c_str());
-            }
-        }
-    }
-}
 
 // -----------------------------------------------------------------------------
 // Hardware
 // -----------------------------------------------------------------------------
 
 void hardwareSetup() {
-    Serial.begin(SERIAL_BAUDRATE);
-    SPIFFS.begin();
-    pinMode(LED_PIN, OUTPUT);
-    ledOff();
+
+    EEPROM.begin(EEPROM_SIZE);
+
+    #if DEBUG_SERIAL_SUPPORT
+        DEBUG_PORT.begin(SERIAL_BAUDRATE);
+        #if DEBUG_ESP_WIFI
+            DEBUG_PORT.setDebugOutput(true);
+        #endif
+    #elif defined(SERIAL_BAUDRATE)
+        Serial.begin(SERIAL_BAUDRATE);
+    #endif
+
+    #if SPIFFS_SUPPORT
+        SPIFFS.begin();
+    #endif
+
 }
 
 void hardwareLoop() {
 
+    // System check
+    static bool checked = false;
+    if (!checked && (millis() > CRASH_SAFE_TIME)) {
+        // Check system as stable
+        systemCheck(true);
+        checked = true;
+    }
+
     // Heartbeat
-    static unsigned long last_heartbeat = 0;
-    if (mqttConnected()) {
-        if ((millis() - last_heartbeat > HEARTBEAT_INTERVAL) || (last_heartbeat == 0)) {
-            last_heartbeat = millis();
-            mqttSend((char *) getSetting("hbTopic", MQTT_HEARTBEAT_TOPIC).c_str(), (char *) "1");
-            DEBUG_MSG("[BEAT] Free heap: %d\n", ESP.getFreeHeap());
-            DEBUG_MSG("[NTP] Time: %s\n", (char *) NTP.getTimeDateString().c_str());
-        }
+    static unsigned long last_uptime = 0;
+    if ((millis() - last_uptime > HEARTBEAT_INTERVAL) || (last_uptime == 0)) {
+        last_uptime = millis();
+        heartbeat();
     }
 
 }
 
+// -----------------------------------------------------------------------------
+// BOOTING
+// -----------------------------------------------------------------------------
+
+unsigned int sectors(size_t size) {
+    return (int) (size + SPI_FLASH_SEC_SIZE - 1) / SPI_FLASH_SEC_SIZE;
+}
+
 void welcome() {
 
-    delay(2000);
-    Serial.printf("%s %s\n", (char *) APP_NAME, (char *) APP_VERSION);
-    Serial.printf("%s\n%s\n\n", (char *) APP_AUTHOR, (char *) APP_WEBSITE);
-    //Serial.printf("Device: %s\n", (char *) getIdentifier().c_str());
-    Serial.printf("ChipID: %06X\n", ESP.getChipId());
-    Serial.printf("Last reset reason: %s\n", (char *) ESP.getResetReason().c_str());
-    Serial.printf("Memory size: %d bytes\n", ESP.getFlashChipSize());
-    Serial.printf("Free heap: %d bytes\n", ESP.getFreeHeap());
-    FSInfo fs_info;
-    if (SPIFFS.info(fs_info)) {
-        Serial.printf("File system total size: %d bytes\n", fs_info.totalBytes);
-        Serial.printf("            used size : %d bytes\n", fs_info.usedBytes);
-        Serial.printf("            block size: %d bytes\n", fs_info.blockSize);
-        Serial.printf("            page size : %d bytes\n", fs_info.pageSize);
-        Serial.printf("            max files : %d\n", fs_info.maxOpenFiles);
-        Serial.printf("            max length: %d\n", fs_info.maxPathLength);
+    DEBUG_MSG_P(PSTR("\n\n"));
+    DEBUG_MSG_P(PSTR("[INIT] %s %s\n"), (char *) APP_NAME, (char *) APP_VERSION);
+    DEBUG_MSG_P(PSTR("[INIT] %s\n"), (char *) APP_AUTHOR);
+    DEBUG_MSG_P(PSTR("[INIT] %s\n\n"), (char *) APP_WEBSITE);
+    DEBUG_MSG_P(PSTR("[INIT] CPU chip ID: 0x%06X\n"), ESP.getChipId());
+    DEBUG_MSG_P(PSTR("[INIT] CPU frequency: %d MHz\n"), ESP.getCpuFreqMHz());
+    DEBUG_MSG_P(PSTR("[INIT] SDK version: %s\n"), ESP.getSdkVersion());
+    DEBUG_MSG_P(PSTR("[INIT] Core version: %s\n"), ESP.getCoreVersion().c_str());
+    DEBUG_MSG_P(PSTR("\n"));
+
+    // -------------------------------------------------------------------------
+
+    FlashMode_t mode = ESP.getFlashChipMode();
+    DEBUG_MSG_P(PSTR("[INIT] Flash chip ID: 0x%06X\n"), ESP.getFlashChipId());
+    DEBUG_MSG_P(PSTR("[INIT] Flash speed: %u Hz\n"), ESP.getFlashChipSpeed());
+    DEBUG_MSG_P(PSTR("[INIT] Flash mode: %s\n"), mode == FM_QIO ? "QIO" : mode == FM_QOUT ? "QOUT" : mode == FM_DIO ? "DIO" : mode == FM_DOUT ? "DOUT" : "UNKNOWN");
+    DEBUG_MSG_P(PSTR("\n"));
+    DEBUG_MSG_P(PSTR("[INIT] Flash sector size: %8u bytes\n"), SPI_FLASH_SEC_SIZE);
+    DEBUG_MSG_P(PSTR("[INIT] Flash size (CHIP): %8u bytes\n"), ESP.getFlashChipRealSize());
+    DEBUG_MSG_P(PSTR("[INIT] Flash size (SDK):  %8u bytes / %4d sectors\n"), ESP.getFlashChipSize(), sectors(ESP.getFlashChipSize()));
+    DEBUG_MSG_P(PSTR("[INIT] Firmware size:     %8u bytes / %4d sectors\n"), ESP.getSketchSize(), sectors(ESP.getSketchSize()));
+    DEBUG_MSG_P(PSTR("[INIT] OTA size:          %8u bytes / %4d sectors\n"), ESP.getFreeSketchSpace(), sectors(ESP.getFreeSketchSpace()));
+    #if SPIFFS_SUPPORT
+        FSInfo fs_info;
+        bool fs = SPIFFS.info(fs_info);
+        if (fs) {
+            DEBUG_MSG_P(PSTR("[INIT] SPIFFS size:       %8u bytes / %4d sectors\n"), fs_info.totalBytes, sectors(fs_info.totalBytes));
+        }
+    #else
+        DEBUG_MSG_P(PSTR("[INIT] SPIFFS size:       %8u bytes / %4d sectors\n"), 0, 0);
+    #endif
+    DEBUG_MSG_P(PSTR("[INIT] EEPROM size:       %8u bytes / %4d sectors\n"), settingsMaxSize(), sectors(settingsMaxSize()));
+    DEBUG_MSG_P(PSTR("[INIT] Empty space:       %8u bytes /    4 sectors\n"), 4 * SPI_FLASH_SEC_SIZE);
+    DEBUG_MSG_P(PSTR("\n"));
+
+    // -------------------------------------------------------------------------
+
+    #if SPIFFS_SUPPORT
+        if (fs) {
+            DEBUG_MSG_P(PSTR("[INIT] SPIFFS total size: %8u bytes\n"), fs_info.totalBytes);
+            DEBUG_MSG_P(PSTR("[INIT]        used size:  %8u bytes\n"), fs_info.usedBytes);
+            DEBUG_MSG_P(PSTR("[INIT]        block size: %8u bytes\n"), fs_info.blockSize);
+            DEBUG_MSG_P(PSTR("[INIT]        page size:  %8u bytes\n"), fs_info.pageSize);
+            DEBUG_MSG_P(PSTR("[INIT]        max files:  %8u\n"), fs_info.maxOpenFiles);
+            DEBUG_MSG_P(PSTR("[INIT]        max length: %8u\n"), fs_info.maxPathLength);
+        } else {
+            DEBUG_MSG_P(PSTR("[INIT] No SPIFFS partition\n"));
+        }
+        DEBUG_MSG_P(PSTR("\n"));
+    #endif
+
+    // -------------------------------------------------------------------------
+
+    DEBUG_MSG_P(PSTR("[INIT] MANUFACTURER: %s\n"), MANUFACTURER);
+    DEBUG_MSG_P(PSTR("[INIT] DEVICE: %s\n"), DEVICE);
+    DEBUG_MSG_P(PSTR("[INIT] SUPPORT:"));
+
+    #if DEBUG_SERIAL_SUPPORT
+        DEBUG_MSG_P(PSTR(" DEBUG_SERIAL"));
+    #endif
+    #if DEBUG_TELNET_SUPPORT
+        DEBUG_MSG_P(PSTR(" DEBUG_TELNET"));
+    #endif
+    #if DEBUG_UDP_SUPPORT
+        DEBUG_MSG_P(PSTR(" DEBUG_UDP"));
+    #endif
+    #if MDNS_SUPPORT
+        DEBUG_MSG_P(PSTR(" MDNS"));
+    #endif
+    #if NOFUSS_SUPPORT
+        DEBUG_MSG_P(PSTR(" NOFUSS"));
+    #endif
+    #if NTP_SUPPORT
+        DEBUG_MSG_P(PSTR(" NTP"));
+    #endif
+    #if SPIFFS_SUPPORT
+        DEBUG_MSG_P(PSTR(" SPIFFS"));
+    #endif
+    #if TELNET_SUPPORT
+        DEBUG_MSG_P(PSTR(" TELNET"));
+    #endif
+    #if TERMINAL_SUPPORT
+        DEBUG_MSG_P(PSTR(" TERMINAL"));
+    #endif
+    #if WEB_SUPPORT
+        DEBUG_MSG_P(PSTR(" WEB"));
+    #endif
+
+    DEBUG_MSG_P(PSTR("\n\n"));
+
+    // -------------------------------------------------------------------------
+
+    unsigned char custom_reset = customReset();
+    if (custom_reset > 0) {
+        char buffer[32];
+        strcpy_P(buffer, custom_reset_string[custom_reset-1]);
+        DEBUG_MSG_P(PSTR("[INIT] Last reset reason: %s\n"), buffer);
+    } else {
+        DEBUG_MSG_P(PSTR("[INIT] Last reset reason: %s\n"), (char *) ESP.getResetReason().c_str());
     }
-    Serial.println();
-    Serial.println();
+
+    DEBUG_MSG_P(PSTR("[INIT] Free heap: %u bytes\n"), ESP.getFreeHeap());
+    #if ADC_VCC_ENABLED
+        DEBUG_MSG_P(PSTR("[INIT] Power: %d mV\n"), ESP.getVcc());
+    #endif
+    DEBUG_MSG_P(PSTR("\n"));
 
 }
 
@@ -237,22 +192,45 @@ void welcome() {
 
 void setup() {
 
+    // Init EEPROM, Serial and SPIFFS
     hardwareSetup();
 
+    // Question system stability
+    systemCheck(false);
+
+    // Show welcome message and system configuration
     welcome();
 
+    // Init persistance and terminal features
     settingsSetup();
     if (getSetting("hostname").length() == 0) {
-        setSetting("hostname", String() + getIdentifier());
-        saveSettings();
+        setSetting("hostname", getIdentifier());
     }
 
     wifiSetup();
     otaSetup();
+    #if TELNET_SUPPORT
+        telnetSetup();
+    #endif
+
+    // Do not run the next services if system is flagged stable
+    if (!systemCheck()) return;
+
+    #if WEB_SUPPORT
+        webSetup();
+    #endif
+
+    ledSetup();
     mqttSetup();
     radioSetup();
-    webSetup();
-    ntpSetup();
+    #if NTP_SUPPORT
+        ntpSetup();
+    #endif
+    #if NOFUSS_SUPPORT
+        nofussSetup();
+    #endif
+
+    saveSettings();
 
 }
 
@@ -262,10 +240,19 @@ void loop() {
     settingsLoop();
     wifiLoop();
     otaLoop();
+
+    // Do not run the next services if system is flagged stable
+    if (!systemCheck()) return;
+
     mqttLoop();
     radioLoop();
-    ntpLoop();
+    #if NTP_SUPPORT
+        ntpLoop();
+    #endif
+    #if NOFUSS_SUPPORT
+        nofussLoop();
+    #endif
 
     yield();
-
+    
 }

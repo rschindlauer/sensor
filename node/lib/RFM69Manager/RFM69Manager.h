@@ -32,9 +32,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // Configuration
 // -----------------------------------------------------------------------------
 
-#define RETRIES             1
+#define PING_EVERY          3
+#define RETRIES             2
 #define REQUESTACK          1
-#define RADIO_DEBUG         0
+#define RADIO_DEBUG         1
 #define SEND_PACKET_ID      1
 #define PACKET_SEPARATOR    ':'
 

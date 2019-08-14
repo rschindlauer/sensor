@@ -2,7 +2,7 @@
 
 ESP8266 file system builder
 
-Copyright (C) 2016 by Xose Pérez <xose dot perez at gmail dot com>
+Copyright (C) 2016-2017 by Xose Pérez <xose dot perez at gmail dot com>
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -29,32 +29,61 @@ const htmlmin = require('gulp-htmlmin');
 const cleancss = require('gulp-clean-css');
 const uglify = require('gulp-uglify');
 const gzip = require('gulp-gzip');
-const del = require('del');
 const inline = require('gulp-inline');
+const inlineImages = require('gulp-css-base64');
+const favicon = require('gulp-base64-favicon');
 
-/* Clean destination folder */
-gulp.task('clean', function() {
-    del(['data/*']);
-    return true;
+const dataFolder = 'src/data/';
+const staticFolder = 'src/static/';
+
+String.prototype.replaceAll = function(search, replacement) {
+    var target = this;
+    return target.split(search).join(replacement);
+};
+
+var toHeader = function(filename) {
+
+    var source = dataFolder + filename;
+    var destination = staticFolder + filename + '.h';
+    var safename = filename.replaceAll('.', '_');
+
+    var wstream = fs.createWriteStream(destination);
+    wstream.on('error', function (err) {
+        console.log(err);
+    });
+
+    var data = fs.readFileSync(source);
+
+    wstream.write('#define ' + safename + '_len ' + data.length + '\n');
+    wstream.write('const uint8_t ' + safename + '[] PROGMEM = {')
+
+    for (i=0; i<data.length; i++) {
+        if (i % 20 == 0) wstream.write("\n");
+        wstream.write('0x' + ('00' + data[i].toString(16)).slice(-2));
+        if (i<data.length-1) wstream.write(',');
+    }
+
+    wstream.write('\n};')
+    wstream.end();
+
+}
+
+gulp.task('build_certs', function() {
+    toHeader('server.cer');
+    toHeader('server.key');
 });
 
-/* Copy static files */
-gulp.task('files', function() {
-    return gulp.src([
-            'html/**/*.{jpg,jpeg,png,ico,gif}',
-            'html/fsversion'
-        ])
-        .pipe(gulp.dest('data/'));
+gulp.task('buildfs_embeded', ['buildfs_inline'], function() {
+    toHeader('index.html.gz');
 });
 
-
-/* Process HTML, CSS, JS  --- INLINE --- */
-gulp.task('inline', function() {
+gulp.task('buildfs_inline', function() {
     return gulp.src('html/*.html')
+        .pipe(favicon())
         .pipe(inline({
             base: 'html/',
             js: uglify,
-            css: cleancss,
+            css: [cleancss, inlineImages],
             disabledTypes: ['svg', 'img']
         }))
         .pipe(htmlmin({
@@ -64,9 +93,7 @@ gulp.task('inline', function() {
             minifyJS: true
         }))
         .pipe(gzip())
-        .pipe(gulp.dest('data'));
+        .pipe(gulp.dest(dataFolder));
 })
 
-/* Build file system */
-gulp.task('buildfs', ['clean', 'files', 'inline']);
-gulp.task('default', ['buildfs']);
+gulp.task('default', ['buildfs_embeded']);
